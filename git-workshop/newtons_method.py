@@ -3,7 +3,6 @@
 import sys
 
 from typing import (Callable, Tuple)
-import typing
 from fractions import (Fraction)
 
 
@@ -41,6 +40,12 @@ def newtons_method(f: Callable[[float], float],
 
 
 def main():
+    """
+    This main function serves as the driver for the demo. Such functions
+    are not required in Python. However, we want to prevent unnecessary module
+    level (i.e., global) variables.
+    """
+
     try:
         initial_guess = float(sys.argv[1])
 
