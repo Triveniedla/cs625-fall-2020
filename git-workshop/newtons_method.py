@@ -6,13 +6,13 @@ from typing import (Callable, Tuple)
 from fractions import (Fraction)
 
 
-EPSILON = 10e-6
+EPSILON = Fraction(1, 10**6)
 MAX_ITERATIONS = 100
 
-def newtons_method(f: Callable[[float], float],
-                   df: Callable[[float], float],
-                   x_n: float,
-                   eps: float = EPSILON) -> Tuple[int, float]:
+def newtons_method(f: Callable[[Fraction], Fraction],
+                   df: Callable[[Fraction], Fraction],
+                   x_n: Fraction,
+                   eps: Fraction = EPSILON) -> Tuple[int, Fraction]:
     """
     Compute an approximate solution to f(x) = 0 using Newton's Method.
 
@@ -69,8 +69,10 @@ def main():
         num_iterations, solution_newton = newtons_method(f, df, initial_guess)
         fx_newton = f(solution_newton)
 
-        output_str = "x = {:.4f} | f(x) = {:.4f} | {} iterations"
-        print(output_str.format(solution_newton, fx_newton, num_iterations))
+        output_str = "x = {} | f(x) = {} | {} iterations"
+        print(output_str.format(solution_newton,
+                                str(fx_newton),
+                                str(num_iterations)))
 
     except ZeroDivisionError as error:
         print(str(error))
