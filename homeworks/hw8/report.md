@@ -1,0 +1,501 @@
+Homework 8
+================
+Triveni Sangama Saraswathi Edla
+
+In the previous assignment, datasets of different business sectors
+affected by the COVID-19 pandemic was explored and questions were
+generated. For each question, a draft chart was proposed. In this
+homework, the draft chart is refined for the below question.
+
+### How does the shortage of beef production rates during the COVID-19 pandemic affect the beef price?
+
+Below is the code used from homework 8 and it cleans the data, that will
+be used for developing the refined chart. For designing the chart, the
+COVID-19 data, beef production rates, and beef prices are used.
+
+``` r
+library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+```
+
+    ## 
+    ## Attaching package: 'lubridate'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     date, intersect, setdiff, union
+
+``` r
+library(scales)
+
+data_coronavirus <- read.csv(file='./cleaned_data_files/us_coronavirus.csv')
+data_coronavirus$date <- ymd(data_coronavirus$date)
+#creating new column with number of new cases
+data_coronavirus <- within(data_coronavirus, new_cases <- c(0,diff(cases)))
+
+data_beef<- read.csv(file = './cleaned_data_files/us_beef.csv')
+data_beef <- data_beef%>% select(Year, Label, Value)
+data_beef <- data_beef %>% separate(Label, c("y", "Month"))
+data_beef <- data_beef%>% select(Year, Month, Value)
+data_beef$Ground=data_beef$Value
+data_beef <- data_beef%>% select(Year, Month, Ground)
+
+data_dum<- read.csv(file = './cleaned_data_files/us_beef_chunk.csv')
+data_beef$Chunk=data_dum$Value
+data_dum<- read.csv(file = './cleaned_data_files/us_beef_uncooked.csv')
+data_beef$Uncooked=data_dum$Value
+
+#Converting month to number
+data_beef$Month=match(data_beef$Month,month.abb)
+#Combining year and month
+data_beef$Date <- with(data_beef, sprintf("20-%02d-28", data_beef$Month))
+#Converting to date date datatype
+data_beef$Date<- ymd(data_beef$Date)
+data_beef <- data_beef%>% select(Year,Date,Ground,Chunk,Uncooked)
+
+# library(zoo)
+
+data_meatproduction<- read.csv(file = './cleaned_data_files/us_beef_chicken_production.csv')
+data_meatproduction<- data_meatproduction %>% separate(Date, c("Month", "Year"))
+
+#Converting comma separated character to integer and calcaulting net beef and chicken
+data_meatproduction$Beef=as.numeric(gsub(",", "", data_meatproduction$Beef))
+data_meatproduction$NetBeef<-data_meatproduction$Beef+data_meatproduction$Veal
+data_meatproduction$Broilers=as.numeric(gsub(",", "", data_meatproduction$Broilers))
+data_meatproduction$Netchicken<-data_meatproduction$Broilers+data_meatproduction$Other_chicken
+
+
+data_meatproduction$Year=as.numeric(gsub(",", "", data_meatproduction$Year))
+
+#Converting month to number
+data_meatproduction$Month=match(data_meatproduction$Month,month.abb)
+#Combining year and month
+data_meatproduction$Date <- with(data_meatproduction, sprintf("20-%02d-28", data_meatproduction$Month))
+#Converting to date datatype
+data_meatproduction$Date<- ymd(data_meatproduction$Date)
+data_meatproduction <- data_meatproduction%>% select(Year,Date,NetBeef,Netchicken)
+```
+
+From the above code, the data frames `data_coronavirus`, `data_beef` and
+`data_meatproduction` is used.
+
+#### Original draft chart
+
+``` r
+library("ggpubr")
+
+p1<-ggplot(data=data_coronavirus, aes(x=date, y=new_cases)) +  geom_line()
+p1<-p1+theme(axis.text.x = element_text(angle=90, hjust = 1))
+p1<-p1+scale_x_date(labels = date_format("%b"))
+p1<-p1+labs(x = "",y = "New COVID cases")
+
+p2<-ggplot()
+p2<-p2+geom_line(data=data_beef %>% filter(Year==2020), aes(x=Date, y=Ground, color = "2020"),linetype="solid",lwd = 1)
+p2<-p2+geom_line(data=data_beef %>% filter(Year==2019), aes(x=Date, y=Ground,color = "2019" ),linetype="dotted",lwd = 1)
+p2<-p2+geom_line(data=data_beef %>% filter(Year==2018), aes(x=Date, y=Ground, color = "2018"),linetype="dashed",lwd = 1)
+p2<-p2+scale_color_discrete(name = "Ground")
+p2<-p2+theme(axis.text.x = element_text(angle=90, hjust = 1),legend.position = "none",legend.justification = c("right", "top"),plot.title = element_text(face = "plain",hjust = 0.5),legend.title=element_blank())
+p2<-p2+scale_x_date(labels = date_format("%b"))
+p2<-p2+labs(x = "Month",y = "Average price (per lb)",title = "Ground")
+
+p3<-ggplot()
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2020), aes(x=Date, y=Chunk, color = "2020"),linetype="solid",lwd = 1)
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2019), aes(x=Date, y=Chunk,color = "2019" ),linetype="dotted",lwd = 1)
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2018), aes(x=Date, y=Chunk, color = "2018"),linetype="dashed",lwd = 1)
+p3<-p3+scale_color_discrete(name = "Ground chunk")
+p3<-p3+theme(axis.text.x = element_text(angle=90, hjust = 1),legend.position = "none",legend.justification = c("right", "top"),plot.title = element_text(face = "plain",hjust = 0.5))
+p3<-p3+scale_x_date(labels = date_format("%b"))
+p3<-p3+labs(x = "Month",y = "Average price (per lb)",title = "Chunk")
+
+p4<-ggplot()
+p4<-p4+geom_line(data=data_beef %>% filter(Year==2020), aes(x=Date, y=Uncooked, color = "2020"),linetype="solid",lwd = 1)
+p4<-p4+geom_line(data=data_beef %>% filter(Year==2019), aes(x=Date, y=Uncooked,color = "2019" ),linetype="dotted",lwd = 1)
+p4<-p4+geom_line(data=data_beef %>% filter(Year==2018), aes(x=Date, y=Uncooked, color = "2018"),linetype="dashed",lwd = 1)
+p4<-p4+scale_color_discrete(name = "Uncooked ground")
+p4<-p4+theme(axis.text.x = element_text(angle=90, hjust = 1),legend.position = "none",legend.justification = c("right", "top"),plot.title = element_text(face = "plain",hjust = 0.5))
+p4<-p4+scale_x_date(labels = date_format("%b"))
+p4<-p4+labs(x = "Month",y = "Average price (per lb)",title = "Uncooked")
+
+p5<-ggplot()
+p5<-p5+geom_line(data=data_meatproduction %>% filter(Year==2020), aes(x=Date, y=NetBeef, color = "2020"),linetype="solid",lwd = 1)
+p5<-p5+geom_line(data=data_meatproduction %>% filter(Year==2019), aes(x=Date, y=NetBeef,color = "2019" ),linetype="dotted",lwd = 1)
+p5<-p5+geom_line(data=data_meatproduction %>% filter(Year==2018), aes(x=Date, y=NetBeef, color = "2018"),linetype="dashed",lwd = 1)
+p5<-p5+scale_color_discrete(name = "Beef")
+p5<-p5+theme(axis.text.x = element_text(angle=90, hjust = 1),legend.position = "none",legend.justification = c("right", "top"),plot.title = element_text(face = "plain",hjust = 0.5))
+p5<-p5+scale_x_date(labels = date_format("%b"))
+p5<-p5+labs(x = "Month",y = "Production (M lbs)")
+
+figure <- ggarrange(p1, p2,p3, p5, p4,ncol = 3, nrow = 2,  common.legend = TRUE)
+figure
+```
+
+![](report_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+The above chart is the original draft chart that was proposed in
+homework 7 to answer the question mentioned at the start of this
+homework. It is refined in this assignment in the below section.
+
+#### Refined chart
+
+``` r
+heading="COVID-19 Outbreak in Meat Plants Caused Shutdowns, Dropped Meat Production,\n and Increased Beef Product Prices"
+heading2="Presidential Executive Order Resumed Meat Production and Drop-in Price of Beef Products"
+
+p1<-ggplot()
+p1<-ggplot(data=data_coronavirus, aes(x=date, y=new_cases/100000)) +  geom_line(color="blue")
+p1<-p1+scale_x_date(labels = date_format("%b"),limits = as.Date(c("2020-01-27","2020-12-01")),date_breaks = "months")
+p1<-p1+labs(y = "New cases",title=heading, subtitle = heading2)
+p1<-p1+theme(legend.position = "none",plot.title = element_text( family="serif",face="bold", colour="blue", size = 13.0))
+p1<-p1+theme(plot.subtitle = element_text( family="serif",face="italic", colour="black", size = 11.0))
+
+p1<-p1+theme(axis.title.x = element_blank(),axis.ticks = element_blank(), panel.grid.minor.x = element_blank())
+p1<-p1+font("ylab")
+
+data2020=data_meatproduction %>% filter(Year==2020)
+data2019=data_meatproduction %>% filter(Year==2019)
+data2018=data_meatproduction %>% filter(Year==2018)
+p2<-ggplot()
+p2<-p2+geom_line(data=data2020, aes(x=Date, y=NetBeef/1e3, color = "2020"),linetype="solid",lwd = 1)
+p2<-p2+geom_line(data=data2019, aes(x=Date, y=NetBeef/1e3,color = "2019" ),linetype="dotted",lwd = 1)
+p2<-p2+geom_line(data=data2018, aes(x=Date, y=NetBeef/1e3, color = "2018"),linetype="dashed",lwd = 1)
+p2<-p2+scale_x_date(labels = date_format("%b"),limits = as.Date(c("2020-01-27","2020-12-01")),date_breaks = "months")
+p2<-p2+theme(legend.position = "none",legend.title=element_blank())
+p2<-p2+labs(y = "Meat production")
+p2<-p2+theme(axis.title.x = element_blank(),axis.ticks = element_blank(), panel.grid.minor.x = element_blank())
+p2<-p2+font("ylab")
+
+#Covid outbreak
+p2<-p2+ geom_point(aes(x = as.Date(c("2020-03-15")), y = 2.26),size=5.0,color="orange")
+
+#Production suspension
+datesuspen=as.Date(c("2020-03-31",
+                     "2020-04-02",
+                     "2020-04-7",
+                     "2020-04-8",
+                     "2020-04-9",
+                     "2020-04-10",
+                     "2020-04-13",
+                     "2020-04-14",
+                     "2020-04-16",
+                     "2020-04-17",
+                     "2020-04-18",
+                     "2020-04-20",
+                     "2020-04-21",
+                     "2020-04-22",
+                     "2020-04-23",
+                     "2020-04-24",
+                     "2020-04-27"))
+prodapprox=approx(data2020$Date,data2020$NetBeef, xout=datesuspen)$y
+p2<-p2+ geom_point(aes(x = datesuspen, y = prodapprox/1e3),size=1.5,color="red")
+
+prodexec=approx(data2020$Date,data2020$NetBeef, xout=as.Date(c("2020-04-29")))$y
+p2<-p2+ geom_point(aes(x = as.Date(c("2020-04-29")), y = 1.01*prodexec/1e3),size=5.0,color="darkgreen")
+
+#Production start
+datestart=as.Date(c( "2020-05-04",
+                     "2020-05-5",
+                     "2020-05-6",
+                     "2020-05-7",
+                     "2020-05-8",
+                     "2020-05-11",
+                     "2020-05-13",
+                     "2020-05-15",
+                     "2020-05-19",
+                     "2020-05-21",
+                     "2020-05-29",
+                     "2020-06-04",
+                     "2020-06-09",
+                     "2020-06-16"))
+prodstart=approx(data2020$Date,data2020$NetBeef, xout=datestart)$y
+p2<-p2+ geom_point(aes(x = datestart, y = prodstart/1e3),size=1.5,color="green3")
+
+p2<-p2+ geom_text(aes(x = as.Date(c("2020-02-16")), y = 2.37,label = "Outbreak"), size=3.2)
+p2<-p2+geom_segment(aes(x = as.Date(c("2020-03-03")), y = 2.33, xend = as.Date(c("2020-03-13")), yend = 2.275),
+                  arrow = arrow(length = unit(0.3, "cm")),size=1.00)
+
+p2<-p2+ geom_text(aes(x = as.Date(c("2020-05-09")), y = 2.38,label = "Shutdowns"), size=3.2)
+p2<-p2+geom_segment(aes(x = as.Date(c("2020-04-20")), y = 2.38, xend = as.Date(c("2020-04-04")), yend = 2.33),
+                  arrow = arrow(length = unit(0.3, "cm")),size=1)
+
+p2<-p2+ geom_text(aes(x = as.Date(c("2020-03-22")), y = 1.82,label = "Executive order"), size=3.2)
+p2<-p2+geom_segment(aes(x = as.Date(c("2020-04-16")), y = 1.80, xend = as.Date(c("2020-04-25")), yend = prodexec/1e3),
+                  arrow = arrow(length = unit(0.3, "cm")),size=1)
+
+
+p2<-p2+ geom_text(aes(x = as.Date(c("2020-07-28")), y = 2.0,label = "Resumed production"), size=3.2)
+p2<-p2+geom_segment(aes(x = as.Date(c("2020-06-26")), y = 2.0, xend = as.Date(c("2020-06-12")), yend = 2.03),
+                  arrow = arrow(length = unit(0.3, "cm")),size=1)
+
+
+data_beef$average<-(data_beef$Ground+data_beef$Chunk+data_beef$Uncooked)/3
+p3<-ggplot()
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2020), aes(x=Date, y=average,color = "2020"),linetype="solid",lwd = 1)
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2019), aes(x=Date, y=average,color = "2019" ),linetype="dotted",lwd = 1)
+p3<-p3+geom_line(data=data_beef %>% filter(Year==2018), aes(x=Date, y=average, color = "2018"),linetype="dashed",lwd = 1)
+p3<-p3+scale_color_discrete(name = "")
+p3<-p3+ scale_x_date(labels = date_format("%b"),limits = as.Date(c("2020-01-27","2020-12-01")),date_breaks = "months")
+p3<-p3+theme(legend.position = c(.97, .97),legend.justification = c("right", "top"),legend.key.height= unit(0.25, 'cm'),
+        legend.key.width= unit(0.50, 'cm'),legend.title =element_blank(),legend.background=element_blank())
+
+
+p3<-p3+theme(plot.title = element_text(face = "plain",hjust = 0.5), panel.grid.minor.x = element_blank(),axis.ticks = element_blank(),axis.title.x = element_blank())
+p3<-p3+labs(y = "Average price")
+p3<-p3+font("ylab")
+
+
+
+library("cowplot")
+```
+
+    ## 
+    ## Attaching package: 'cowplot'
+
+    ## The following object is masked from 'package:ggpubr':
+    ## 
+    ##     get_legend
+
+    ## The following object is masked from 'package:lubridate':
+    ## 
+    ##     stamp
+
+``` r
+pall<-ggdraw() +
+  draw_plot(p1, x = 0, y = 0.58, width = 0.985, height = 0.42) +
+  draw_plot(p2, x = 0, y = .29, width = 0.985, height = .29) +
+  draw_plot(p3, x = 0, y = 0, width = 0.985, height = 0.29)
+```
+
+    ## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+    ## Warning: Removed 1 row(s) containing missing values (geom_path).
+    
+    ## Warning: Removed 1 row(s) containing missing values (geom_path).
+    
+    ## Warning: Removed 1 row(s) containing missing values (geom_path).
+    
+    ## Warning: Removed 1 row(s) containing missing values (geom_path).
+
+``` r
+pall<-pall+ geom_text(data = data.frame(x = 0.04, y = 0.87, label = c("10^5")),aes(x, y, label = c("10^5")),
+     size = 3.2,
+    inherit.aes = FALSE)
+#Scale for p2
+pall<-pall+ geom_text(data = data.frame(x = 0.05, y = 0.59, label = paste('10^3')),aes(x, y, label = label),
+     size = 3.2,
+    inherit.aes = FALSE)
+#right label for p1
+pall<-pall+ geom_text(data = data.frame(x = 0.99, y = 0.74),aes(x, y, label = "COVID"),
+     size = 4.0, angle=270,
+    inherit.aes = FALSE)
+#right label for p2
+pall<-pall+ geom_text(data = data.frame(x = 0.99, y = 0.46, label = "M lb per day"),aes(x, y, label = label),
+     size = 4.0, angle=270,  inherit.aes = FALSE)
+#right label for p3
+pall<-pall+ geom_text(data = data.frame(x = 0.99, y = 0.17, label = "Beef products"),aes(x, y, label = label),
+     size = 4.0, angle=270,    inherit.aes = FALSE)
+
+pall
+```
+
+![](report_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+The above chart answers the question mentioned at the start of this home
+work.
+
+The above chart shows that increase of COVID-19 cases was significant
+around mid-march. The outbreak of COVID-19 in the meat processing plants
+was also started around mid-march as shown by the orange point marker in
+the chart and the cases among the meat plant workers were increased
+significantly by the start of April as reported by the agencies such as
+[Food & Environment Reporting
+Network](https://thefern.org/2020/05/charting-the-spread-of-covid-19-in-the-food-system/)
+and [CDC](https://www.cdc.gov/mmwr/volumes/69/wr/mm6927e2.htm). The
+increase in COVID-19 cases among the workers caused the meat plants to
+[shut
+down](https://www.meatpoultry.com/articles/22993-covid-19-meat-plant-map)
+starting from early April as shown by the red point markers. Each red
+point indicates the shutdown of a meat processing plant reported by the
+[Meatpoultry](https://www.meatpoultry.com/articles/22993-covid-19-meat-plant-map)
+website. This has affected meat production as shown by a significant
+drop in production to around 1800 million pounds of meat by the end of
+April as compared to previous years. The meat production at the start of
+May was significantly low compared to the previous two years.
+
+The [Executive
+Order](https://www.usda.gov/media/press-releases/2020/04/28/usda-implement-president-trumps-executive-order-meat-and-poultry)
+by United States [President](https://www.washingtonpost.com/) to keep
+meat and poultry processing facilities to open during the COVID-19
+national emergency under [Defense Production Act
+of 1950](https://www.whitehouse.gov/presidential-actions/executive-order-delegating-authority-dpa-respect-food-supply-chain-resources-national-emergency-caused-outbreak-covid-19/)
+have forced the meat processing plants to restart meat production. The
+meat processing plants reopening started shortly after the Executive
+Order as shown by the light green point markers. The meat production
+rate has increased as the meat processing plants reopened and reached a
+similar production rate as the previous year by the start of July. The
+shortage of meat production during the April-May months has caused a
+significant increase in the beef product prices by the start of July.
+The price dropped after July as the meat production presumed around the
+start of May after initial shutdowns.
+
+To design the chart, the below steps were followed:
+
+1)  First individual plots for COVID-19, meat production rates, and beef
+    price data were generated.
+
+2)  The COVID data was plotted using the `ggplot()` and `geom_line()`
+    functions. In this plot, daily new COVID-19 cases were plotted using
+    a blue line marker between the end of January to December. The
+    heading for the chart is generated using the `title`, `subtitle`
+    features of `labs()` function. The legend for this plot was removed
+    using the `theme()` function. The COVID-19 data plot was saved to
+    the variable, obtained.
+
+3)  Next meat production data is plotted using the `ggplot()` and
+    `geom_line()` functions. The approximate start of the COVID-19
+    outbreak in the meat processing plants is plotted using the
+    `geom_point()` function with orange color point marker based on the
+    data ontained from the
+    [CDC](https://www.cdc.gov/mmwr/volumes/69/wr/mm6931a2.htm). The
+    shutdowns of different meat processing plants were plotted using the
+    `geom_point()` function based on the timeline provided by the
+    [Meatpoultry](https://www.meatpoultry.com/articles/22993-covid-19-meat-plant-map)
+    website. The red point markers indicate shut down of each meat
+    production plant reported on the Meatpoultry website. To plot the
+    red color point markers on the meat production line marker of 2020,
+    the meat production rates on the dates of plant shutdowns were
+    obtained using the `approx()` function. The Executive Order was
+    annotated on the plot using `geom_point()`, `geom_text()` and
+    `geom_segment` functions with a dark green color point marker.
+    Shortly after the executive order, the meat processing plants
+    restarted production as shown by the light green points. The meat
+    production plot was saved to variable `p2`.
+
+4)  The beef price data was plotted and save to variable, `p3`. This
+    plot is build using some of the features used for generating the
+    above plots and the legend was also included in this plot. The
+    legend is adjusted to be inside the plot using
+    `legend.justification` feature in `theme()` function. For p1, p2,
+    and p3 plots, the same x-axis limits were used.
+
+5)  Finally, all three plots were combined into a single chart using
+    the`draw_plot()` and `ggdraw()` functions available under the
+    `cowplot` library. Additional text was printed on the right of each
+    plot using the `geom_text()` function and setting the relative
+    position of the text.
+
+## References
+
+Data
+
+  - COVID-19 data: <https://github.com/nytimes/covid-19-data>
+
+  - Ground beef price:
+    <https://beta.bls.gov/dataViewer/view/timeseries/APU0000703112>
+
+  - Ground chunk Beef:
+    <https://beta.bls.gov/dataViewer/view/timeseries/APU0000703111>
+
+  - Uncooked ground beef:
+    <https://beta.bls.gov/dataViewer/view/timeseries/APU0000FC1101>
+
+  - Meat production data:
+    <https://www.ers.usda.gov/data-products/livestock-meat-domestic-data/livestock-meat-domestic-data/#All%20meat%20statistics>
+
+  - Meat shut down time line:
+    <https://www.meatpoultry.com/articles/22993-covid-19-meat-plant-map>
+
+  - No fresh wave:
+    <https://www.wsj.com/articles/fresh-wave-of-meat-plant-shutdowns-unlikely-jbs-usa-chief-says-11601935477>
+
+  - COVID outbreak affection on meat processing plant in South Dakota:
+    <https://www.cdc.gov/mmwr/volumes/69/wr/mm6931a2.htm>
+
+  - COVID outbreak affection on meat processing plant in Virginia:
+    <https://www.vdh.virginia.gov/coronavirus/2020/09/01/covid-19-outbreaks-associated-with-meat-and-poultry-processing-plants-in-virginia-3/>
+
+  - Production plants shut down:
+    <https://www.meatpoultry.com/articles/22993-covid-19-meat-plant-map>
+
+  - Covid:
+    <https://thefern.org/2020/05/charting-the-spread-of-covid-19-in-the-food-system/>
+
+R Code
+
+  - For creating new columns using within Function:
+    <https://stackoverflow.com/questions/39514174/adding-new-column-with-diff-function-when-there-is-one-less-row-in-r>
+
+  - Working with Dates(mdy): <https://mgimond.github.io/ES218/Week02c>
+
+  - For diff function:
+    <https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/diff>
+
+  - Separating single columns to multiple columns:
+    <https://tidyr.tidyverse.org/reference/separate.html>
+
+  - COnverting month name to a number:
+    <https://stackoverflow.com/questions/6549239/convert-months-mmm-to-numeric>
+
+  - COmbining year and month:
+    <https://stackoverflow.com/questions/39420136/combine-separate-year-and-month-columns-into-single-date-column>
+
+  - Display only month on the ggplot axis:
+    <https://stackoverflow.com/questions/16596811/display-the-x-axis-on-ggplot-as-month-only-in-r>
+
+  - Changing colors in aes automatically:
+    <http://www.sthda.com/english/wiki/ggplot2-colors-how-to-change-colors-automatically-and-manually#prepare-the-data>
+
+  - Extracting year from date:
+    <https://www.datasciencemadesimple.com/get-year-from-date-in-r-2/>
+
+  - Converting character to date datatype:
+    <https://stackoverflow.com/questions/4310326/convert-character-to-date-in-r>
+
+  - Filtering year from date:
+    <https://blog.exploratory.io/filter-with-date-function-ce8e84be680>
+
+  - Month scale (scale\_x\_date) on x-axis:
+    <https://www.datanovia.com/en/blog/ggplot-date-axis-customization/>
+
+  - Different line types in R:
+    <https://www.datanovia.com/en/blog/line-types-in-r-the-ultimate-guide-for-r-base-plot-and-ggplot/>
+
+  - Legends:
+    <https://www.r-graph-gallery.com/239-custom-layout-legend-ggplot2.html>
+    \*The ggplot linewidth:
+    <https://stackoverflow.com/questions/44478362/line-thickness-in-plot-function-in-r/44478798>
+
+  - Converting the comma-separated character to
+    integer:<https://stackoverflow.com/questions/1523126/how-to-read-data-when-some-numbers-contain-commas-as-thousand-separator>
+
+  - Looping over the dataframe rows:
+    <https://campus.datacamp.com/courses/intermediate-r-for-finance/loops-3?ex=10>
+
+  - Multiple figures using ggplot:
+    <https://www.datanovia.com/en/lessons/combine-multiple-ggplots-into-a-figure/>
+
+  - Remove legend name in ggplot:
+    <https://stackoverflow.com/questions/14771546/remove-legend-title-in-ggplot>
+
+  - Approximation function:
+    <https://astrostatistics.psu.edu/su07/R/html/stats/html/approxfun.html>
+
+  - Drawing arrows:
+    <https://stackoverflow.com/questions/38008863/how-to-draw-a-nice-arrow-in-ggplot2>
+    \*Change legend size:
+    <https://www.statology.org/ggplot2-legend-size/>
