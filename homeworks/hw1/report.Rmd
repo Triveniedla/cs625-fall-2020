@@ -1,0 +1,238 @@
+---
+title: "Homework 1"
+author: "Triveni Sangama Saraswathi"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+CS 625, Fall 2020
+
+## Git, GitHub
+
+1. *What is your GitHub username?*
+  
+    Triveniedla
+
+2. *What is the URL of your remote GitHub repo (created through Mr. Kennedy's exercises)?*
+
+     git@github.com:Triveniedla/cs625-fall-2020.git
+
+## R
+
+The command below will load the tidyverse package.  If you have installed R, RStudio, and the tidyverse package, it should display a list of loaded packages and their versions.
+```{r}
+library(tidyverse)
+```
+
+## R Markdown 
+
+1. *Create an ordered bulleted list with at least 3 items*
+
+*   Data Visualization Tools
+
+*   R studio
+
+    * R
+
+    * R Markdown
+
+* Tableau
+
+2. *Write a paragraph that demonstrates the use of italics, bold, bold italics, and code.*
+   
+     
+     *R Markdown* is a file format for making **dynamic documents** with R. An R Markdown document is written in markdown and contains chunks of **_embedded R code_**.
+   
+   ```{r}
+'1 + 2'
+```
+
+3. *Create an example of a fenced code block.*
+
+  First Header  | Second Header
+  ------------- | -------------
+  Item          | Price
+  City          | Weather
+    
+
+4. *Create a level 4 heading*
+   
+   #### Data Visualization
+## R 
+
+#### Data Visualization Exercises
+
+1. *Run ggplot(data = mpg). What do you see?*
+   
+```{r}
+ggplot(data = mpg)
+```
+   
+   R is not returning any graphical output.
+
+2. *How many rows are in mpg? How many columns?*
+   
+   There are 234 rows and 11 columns.
+
+3. *What does the drv variable describe? Read the help for ?mpg to find out.*
+   
+   It describes the type of drive train, where f=front-wheel drive, r=rear wheel drive, 4=4wd.
+  
+
+4. *Make a scatterplot of hwy vs cyl.*
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = cyl, y = hwy))
+
+```
+
+5. *What happens if you make a scatterplot of class vs drv? Why is the plot not useful?*
+
+ ```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = class, y = drv))
+
+```
+
+There is no correlation between type of drive train (drv) and type of car (class).
+
+#### Workflow: basics Exercises
+
+1. *Why does this code not work?*
+
+```r
+my_variable <- 10
+my_varıable
+```
+
+   The code does not work because the assigned variable and the variable called to print does not match. This exercise shows that particular emphasis on typos and latter cases for writing codes is essential.
+   
+2. *Tweak each of the following R commands so that they run correctly:*
+
+```r
+library(tidyverse)
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+fliter(mpg, cyl = 8)
+filter(diamond, carat > 3)
+```
+
+The tweaked code and output is shown below
+
+
+```{r}
+library(tidyverse)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+filter(mpg, cyl == 8)
+filter(diamonds, carat > 3)
+```
+
+3. *Press Alt + Shift + K. What happens? How can you get to the same place using the menus?*
+
+    Alt + Shift + k returns a window showing quick reference to keyboard shortcuts. Pressing any returning to the same place. However, I prefer to use ESC to return to the same place.
+
+## Tableau
+
+*Insert your the image of your final bar chart here*
+
+![Tableau](report_files/figure-gfm/SalesintheWest.png)
+
+
+1. *What conclusions can you draw from the chart?*
+
+   
+   The above bar plot shows the sales in the west. The sales of bookcases under the furniture category are low with heavy losses during the years 2018, 2019, and 2020. Whereas sales of tables are under loss in 2019 and sales in machines incurred loss in 2020. However, the year 2020 has good sales with profits in a few of the subcategories. 
+
+
+## Observable and Vega-Lite
+
+### A Taste of Observable
+
+1. *In the "New York City weather forecast" section, try replacing `Forecast: detailedForecast` with `Forecast: shortForecast`. Then press the blue play button  or use Shift-Return to run your change. What happens?*
+
+      
+      The description of the attribute "Forecast" became brief when `Forecast: shortForecast` is used.
+
+1. *Under the scatterplot of temperature vs. name, try replacing `markCircle()` with `markSquare()`. Then press the blue play button  or use Shift-Return to run your change. What happens? How about `markPoint()`?*
+
+     
+     The markpoint becomes square with `markSquare()`.
+
+1. *Under "Pick a location, see the weather forecast", pick a location on the map.  Where was the point you picked near?*
+
+![usweatherforecast](report_files/figure-gfm/weatherforecast.png)
+
+     The location of the point in the map is near Lost Springs, KS.
+    
+
+
+1. *The last visualization on this page is a "fancy" weather chart embedded from another notebook.  Click on the 3 dots next to that chart and choose 'Download PNG'.  Insert the PNG into your report.*
+
+![fancy](report_files/figure-gfm/a-taste-of-observable.png)
+
+### Charting with Vega-Lite
+
+1. *Pass an option of { size: 200 } to markCircle().*
+    
+![size_200](report_files/figure-gfm/Image_1.png)
+    
+     From the above scatter plot, I observed that the size of the data points has increased. This made a lot of points overlap and decreased clarity. I also observe that the relationship between Miles_per_Gallon and Horsepower is negative.
+
+
+
+1. *Try markSquare instead of markCircle.*
+
+![mark_square](report_files/figure-gfm/Image_2.png)
+    
+    In the above scatter plot the data points are replaced by squares when markSquare is used.
+
+1. *Try markPoint({ shape: 'diamond' }).*
+
+![diamond](report_files/figure-gfm/Image_3.png)
+
+      In the above sctter plot, the data points are replaced by diamond pointer when markpoint({shape:'diamond'}) is used.
+
+1. *Change Horsepower to Acceleration*
+
+![accelation](report_files/figure-gfm/Image_4.png)
+   
+   In the above scatter plot, the attribute on the x-axis is replaced by Acceleration. I observe that the relationship between Miles_per_Gallon and Acceleration is positive.
+   
+1. *Swap what fields are displayed on the x- and y-axis* 
+
+![swap](report_files/figure-gfm/Image_5.png)
+  
+
+1. *Change Name to Origin.*
+
+![origin](report_files/figure-gfm/Image_6.png)
+
+    The above scatter plot shows no change after the name has been changed to origin. 
+
+1. *Remove the vl.y().fieldN("Origin") line.*
+
+![remove_origin](report_files/figure-gfm/Image_7.png)
+ 
+    The above plot shows the count of records and there are approximately 400 records in total.
+  
+1. *Replace count() with average("Miles_per_Gallon").*
+
+![average](report_files/figure-gfm/Image_8.png)
+   
+    The above plot shows the Average of Miles_per_Gallon. 
+
+## References
+
+https://observablehq.com/@observablehq/a-taste-of-observable
+https://r4ds.had.co.nz/r-markdown.html
+https://help.tableau.com/current/guides/get-started-tutorial/en-us/get-started-tutorial-home.htm
+https://r4ds.had.co.nz/workflow-basics.html
+https://www.earthdatascience.org/courses/earth-analytics/document-your-science/add-images-to-rmarkdown-report/
